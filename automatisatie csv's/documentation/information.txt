@@ -1,0 +1,6 @@
+﻿Roles
+1: manager
+2: /
+3: teacher
+4: non editing teacher
+5: Student

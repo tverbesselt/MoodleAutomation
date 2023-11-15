@@ -1,4 +1,5 @@
 ﻿using automatisatie_csv_s.BO;
+using automatisatie_csv_s.Services.IOServices;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,31 +9,24 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using static Google.Apis.Requests.BatchRequest;
 
 namespace automatisatie_csv_s.Services.Rest_Services
 {
     public partial class RestServicesMoodle
     {
-
-
-        static HttpClient httpClient = new HttpClient();
-
-
-
+        static readonly HttpClient httpClient = new() { BaseAddress= new Uri(StaticVariables.moodleUrl) };
         public static void LoadUsersAndCourses()
         {
-            
             LoadUsers();
             Console.WriteLine("Users loaded from Moodle. " + StaticVariables.UsersCurrentlyInMoodle.Count + " users found");
-            StaticVariables.CoursesCurrentlyInMoodle = LoadCourses();
+            LoadCourses();
             Console.WriteLine("Courses loaded from Moodle. " + StaticVariables.CoursesCurrentlyInMoodle.Count + " courses found");
-            //StaticVariables.CategoriesCurrentlyInMoodle = LoadCategoriesFromMoodle();
-            Console.WriteLine("categories loaded from Moodle. " + StaticVariables.CategoriesCurrentlyInMoodle.Count + " categories found");
-            
+            Console.WriteLine("wait for all transactions to finish..");
+            Thread.Sleep(5000); //make sure all users are imported
         }
-        private static List<MoodleCourse>? LoadCourses()
+        private static void LoadCourses()
         {
-
             var postData = new List<KeyValuePair<string, string>> {
                 new KeyValuePair<string, string>("wstoken", StaticVariables.token),
                 new KeyValuePair<string, string>("wsfunction", "core_course_get_courses"),
@@ -41,65 +35,53 @@ namespace automatisatie_csv_s.Services.Rest_Services
             var content = new FormUrlEncodedContent(postData);
 
             var response = httpClient.PostAsync("/webservice/rest/server.php", content).Result;
-            
+
             if (response.IsSuccessStatusCode)
             {
-               string result = response.Content.ReadAsStringAsync().Result;
+                string result = response.Content.ReadAsStringAsync().Result;
 
                 List<MoodleCourse>? courses = JsonConvert.DeserializeObject<List<MoodleCourse>>(result);
-                return courses;
+                StaticVariables.CoursesCurrentlyInMoodle = courses;
+                return;
 
             }
             else
             {
                 Console.WriteLine($"HTTP Error: {response.StatusCode}");
-                return null;
+                return;
             }
         }
         private static void LoadUsers()
         {
-
-
             var postData = new List<KeyValuePair<string, string>>
-    {
-        new KeyValuePair<string, string>("wstoken", StaticVariables.token),
-        new KeyValuePair<string, string>("wsfunction", "core_user_get_users"),
-        new KeyValuePair<string, string>("moodlewsrestformat", "json"),
-        new KeyValuePair<string, string>("criteria[0][key]", "email"),
-        new KeyValuePair<string, string>("criteria[0][value]", "%")
-    };
-
+                {
+                     new KeyValuePair<string, string>("wstoken", StaticVariables.token),
+                     new KeyValuePair<string, string>("wsfunction", "core_user_get_users"),
+                     new KeyValuePair<string, string>("moodlewsrestformat", "json"),
+                     new KeyValuePair<string, string>("criteria[0][key]", "email"),
+                     new KeyValuePair<string, string>("criteria[0][value]", "%")
+                 };
             var content = new FormUrlEncodedContent(postData);
-
-            // Use synchronous method
             HttpResponseMessage response = httpClient.PostAsync("/webservice/rest/server.php", content).Result;
-
             if (response.IsSuccessStatusCode)
             {
-                // Use synchronous method
                 string result = response.Content.ReadAsStringAsync().Result;
                 var moodleResponse = JsonConvert.DeserializeObject<MoodleUsersResponse>(result);
-
                 StaticVariables.UsersCurrentlyInMoodle.Clear();
-                foreach (var user in moodleResponse.Users)
-                {
-                    StaticVariables.UsersCurrentlyInMoodle.Add(user);
-                }
+                if (moodleResponse != null) StaticVariables.UsersCurrentlyInMoodle.AddRange(moodleResponse.Users);        
             }
             else
             {
                 Console.WriteLine($"HTTP Error: {response.StatusCode}");
             }
         }
-        public static List<MoodleCategory>? LoadCategoriesFromMoodle()
+        public static void LoadCategoriesFromMoodle()
         {
-            httpClient.BaseAddress = new Uri(StaticVariables.moodleUrl);
-
+            
             var postData = new List<KeyValuePair<string, string>> {
                 new KeyValuePair<string, string>("wstoken", StaticVariables.token),
                 new KeyValuePair<string, string>("wsfunction", "core_course_get_categories"),
                 new KeyValuePair<string, string>("moodlewsrestformat", "json")    };
-
             var content = new FormUrlEncodedContent(postData);
 
             var response = httpClient.PostAsync("/webservice/rest/server.php", content).Result;
@@ -107,22 +89,14 @@ namespace automatisatie_csv_s.Services.Rest_Services
             if (response.IsSuccessStatusCode)
             {
                 string result = response.Content.ReadAsStringAsync().Result;
-               
                 List<MoodleCategory>? categories = JsonConvert.DeserializeObject<List<MoodleCategory>>(result);
-                return categories;
-
+                StaticVariables.CategoriesCurrentlyInMoodle = categories;
+                if (StaticVariables.CategoriesCurrentlyInMoodle != null)LogService.LogEvent("categories loaded from Moodle. " + StaticVariables.CategoriesCurrentlyInMoodle.Count + " categories found", "MoodleREST");          
             }
             else
             {
-                Console.WriteLine($"HTTP Error: {response.StatusCode}");
-                return null;
+                LogService.LogError($"Load Categories http error: {response.StatusCode}");            
             }
-
-
-
-
-
-
         }
         public static async void CreateTeacher(Teacher leraar)
         {
@@ -163,7 +137,7 @@ namespace automatisatie_csv_s.Services.Rest_Services
             catch (Exception ex)
             {
 
-                await Console.Out.WriteLineAsync(ex.Message);
+                Console.WriteLine(ex.Message);
             }
 
         }
@@ -198,10 +172,8 @@ namespace automatisatie_csv_s.Services.Rest_Services
                     }
                     catch (Exception)
                     {
-
                         Console.WriteLine($"Error: {result}");
                     }
-
                 }
                 else
                 {
@@ -215,7 +187,7 @@ namespace automatisatie_csv_s.Services.Rest_Services
             }
 
         }
-       
+
         public static int GetCourseIdByShortName(string shortName)
         {
             var id = (from MoodleCourse course in StaticVariables.CoursesCurrentlyInMoodle
@@ -229,7 +201,7 @@ namespace automatisatie_csv_s.Services.Rest_Services
                     where user.Username == Username
                     select user.Id).FirstOrDefault();
         }
-       
+
         public static async Task CreateCourseInMoodle(Course cursus)
         {
             int maxAttempts = 10;
@@ -278,9 +250,8 @@ namespace automatisatie_csv_s.Services.Rest_Services
                 }
                 catch (Exception ex)
                 {
-                    // Log or handle the exception if needed
+                    Console.WriteLine($"Exception: {ex.Message}");
                 }
-
                 attempts++;
                 Console.WriteLine("retrying... " + attempts);
             } while (attempts < maxAttempts);
@@ -290,7 +261,7 @@ namespace automatisatie_csv_s.Services.Rest_Services
         public static async void EnrollUserInMoodle(string roleType, string userName, string courseshortname)
         {
             var userID = GetUserIdByUsername(userName + "@cvoantwerpen.org").ToString();
-            var courseID =GetCourseIdByShortName(courseshortname).ToString();
+            var courseID = GetCourseIdByShortName(courseshortname).ToString();
             var postData = new List<KeyValuePair<string, string>>
             {
                 new KeyValuePair<string, string>("wstoken", StaticVariables.token),
@@ -299,7 +270,7 @@ namespace automatisatie_csv_s.Services.Rest_Services
                 new KeyValuePair<string, string>("enrolments[0][roleid]", roleType),
                 new KeyValuePair<string, string>("enrolments[0][userid]", userID),
                 new KeyValuePair<string, string>("enrolments[0][courseid]",courseID )
-                
+
             };
 
             var content = new FormUrlEncodedContent(postData);
@@ -314,7 +285,7 @@ namespace automatisatie_csv_s.Services.Rest_Services
 
                     try
                     {
-                        
+
 
                     }
                     catch (Exception)
@@ -330,12 +301,12 @@ namespace automatisatie_csv_s.Services.Rest_Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message );
+                Console.WriteLine(ex.Message);
             }
         }
         private static string ConvertToTimeStamp(string date)
         {
-            
+
             DateTime dateTime = DateTime.ParseExact(date, "dd.MM.yyyy", null);
 
             // Convert DateTime to a Unix timestamp (seconds since Unix epoch)

@@ -30,7 +30,7 @@ namespace automatisatie_csv_s.Services.IOServices
             });
 
             // Create Google user
-            User newUser = new User
+            User newUser = new()
             {
                 PrimaryEmail = "newuser@cvoantwerpen.org",  // Replace with the new user's email address
                 Name = new UserName
@@ -46,7 +46,7 @@ namespace automatisatie_csv_s.Services.IOServices
 
             try
             {
-                User createdUser = await request.ExecuteAsync();
+                User createdUser =  request.ExecuteAsync().Result;
                 Console.WriteLine("User created: " + createdUser.PrimaryEmail);
             }
             catch (Exception e)
@@ -62,7 +62,7 @@ namespace automatisatie_csv_s.Services.IOServices
             string filePath = Path.Combine(desktopPath, "user_data.csv");
 
             // Create and write to the CSV file
-            using (StreamWriter writer = new StreamWriter(filePath, true)) // Pass true to append to existing file
+            using (StreamWriter writer = new(filePath, true)) // Pass true to append to existing file
             {
                 // If the file is empty, write the header row
                 if (writer.BaseStream.Length == 0)

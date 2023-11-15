@@ -53,7 +53,7 @@ namespace automatisatie_csv_s.Services.IOServices
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
-        public static string SearchForZips()
+        public static string SearchForZipFilesOnDesktop()
         {
             // Get the user's desktop directory
             string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
@@ -96,7 +96,7 @@ namespace automatisatie_csv_s.Services.IOServices
             Console.WriteLine($"You selected: {Path.GetFileName(selectedFile)}");
             return Path.GetFileName(selectedFile);
         }
-        public static async  Task AddNewUsersAndCoursesToMoodle(string[] files)
+        public static void AddNewUsersAndCoursesToMoodle(string[] files)
         {
             foreach (string file in files)
             {
@@ -106,7 +106,7 @@ namespace automatisatie_csv_s.Services.IOServices
                     foreach (var cursist in StaticVariables.Students)
                     {
                         RestServicesMoodle.CreateStudent(cursist);
-                       
+
                     }
 
                 }
@@ -117,7 +117,7 @@ namespace automatisatie_csv_s.Services.IOServices
                     foreach (var leraar in StaticVariables.Teachers)
                     {
                         RestServicesMoodle.CreateTeacher(leraar);
-                       
+
                     }
                 }
 
@@ -127,9 +127,9 @@ namespace automatisatie_csv_s.Services.IOServices
                     StaticVariables.Courses = ReadCSVFiles.ReadCSVmoodleCursus(file);
                     foreach (var cursus in StaticVariables.Courses)
                     {
-                         RestServicesMoodle.CreateCourseInMoodle(cursus).ConfigureAwait(true);
+                        RestServicesMoodle.CreateCourseInMoodle(cursus).ConfigureAwait(true);
                         //to avoid deadlocks when inserting lots of courses.
-                        
+
                         Thread.Sleep(100);
                     }
                 }

@@ -12,33 +12,26 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        Console.WriteLine("Load categories from moodle instance");
-        StaticVariables.CategoriesCurrentlyInMoodle = RestServicesMoodle.LoadCategoriesFromMoodle();
-        Console.WriteLine( "read all zip files on desktop..");
-        //select the zip file to use and extract
-        string zipfile = Zipservices.SearchForZips();
-        string[] files = Zipservices.ExtractZipToTemp(zipfile);
-        
+        LogService.LogEvent("Application started at " + DateTime.Now.ToShortTimeString + " on " + DateTime.Now.ToShortDateString(), "Application");
 
-        //Load all new students and courses in Moodle
+
+        RestServicesMoodle.LoadCategoriesFromMoodle();
+        
+        string zipfile = Zipservices.SearchForZipFilesOnDesktop();
+        
+        string[] files = Zipservices.ExtractZipToTemp(zipfile);
+
         Zipservices.AddNewUsersAndCoursesToMoodle(files);
 
-        //read all courses and students from moodle to get all ID's
-        Console.WriteLine("Loading users and courses from moodle");
         RestServicesMoodle.LoadUsersAndCourses();
-        //  PrintData.PrintLists(StaticVariables.Students,StaticVariables.Courses, StaticVariables.Teachers,StaticVariables.TeachingAssignments, StaticVariables.Enrollments);
-        Console.WriteLine(  "wait for all transactions to finish..");
-        Thread.Sleep(5000); //make sure all users are imported
-        //Load all enrollments and teacher assignments into Moodle
-        Console.WriteLine("start enrolling students and teachers..");
+            
         Zipservices.AddEnrollmentsAndAssignmentsToMoodle(files);
 
         RestServicesGoogle.CreateGoogleImportList();
 
+        
+        LogService.LogEvent("Application finished at " + DateTime.Now.ToShortTimeString + " on " + DateTime.Now.ToShortDateString(), "Application");
+
     }
 }
 
-
-
-
-//methods

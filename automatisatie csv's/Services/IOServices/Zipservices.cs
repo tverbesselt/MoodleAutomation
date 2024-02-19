@@ -43,14 +43,14 @@ namespace automatisatie_csv_s.Services.IOServices
                 foreach (string file in files)
                 {
                     File.Delete(file);
-                    Console.WriteLine($"Deleted file: {file}");
+                
                 }
 
                 Console.WriteLine("All files deleted successfully!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                Console.WriteLine($"No files to delete");
             }
         }
         public static string SearchForZipFilesOnDesktop()
@@ -96,6 +96,8 @@ namespace automatisatie_csv_s.Services.IOServices
             Console.WriteLine($"You selected: {Path.GetFileName(selectedFile)}");
             return Path.GetFileName(selectedFile);
         }
+
+       
         public static void AddNewUsersAndCoursesToMoodle(string[] files)
         {
             foreach (string file in files)
@@ -106,7 +108,7 @@ namespace automatisatie_csv_s.Services.IOServices
                     foreach (var cursist in StaticVariables.Students)
                     {
                         RestServicesMoodle.CreateStudent(cursist);
-
+                        
                     }
 
                 }
@@ -117,7 +119,7 @@ namespace automatisatie_csv_s.Services.IOServices
                     foreach (var leraar in StaticVariables.Teachers)
                     {
                         RestServicesMoodle.CreateTeacher(leraar);
-
+                        
                     }
                 }
 
@@ -127,10 +129,7 @@ namespace automatisatie_csv_s.Services.IOServices
                     StaticVariables.Courses = ReadCSVFiles.ReadCSVmoodleCursus(file);
                     foreach (var cursus in StaticVariables.Courses)
                     {
-                        RestServicesMoodle.CreateCourseInMoodle(cursus).ConfigureAwait(true);
-                        //to avoid deadlocks when inserting lots of courses.
-
-                        Thread.Sleep(100);
+                        RestServicesMoodle.CreateCourseInMoodle(cursus);                       
                     }
                 }
             }
@@ -145,6 +144,7 @@ namespace automatisatie_csv_s.Services.IOServices
                     foreach (var inschrijving in StaticVariables.Enrollments)
                     {
                         RestServicesMoodle.EnrollUserInMoodle("5", inschrijving.Username, inschrijving.CourseShortName);
+                       // Thread.Sleep(10);
                     }
                 }
 
@@ -157,7 +157,25 @@ namespace automatisatie_csv_s.Services.IOServices
                         RestServicesMoodle.EnrollUserInMoodle("3", opdracht.Username, opdracht.CourseShortName);
                     }
                 }
+               
+
             }
         }
-    }
+        public static void UnEnrollusers(string[] files)
+        {
+            foreach (string file in files)
+            {
+                if (file.Contains("moodle") && file.Contains("uitschrijving"))
+                {
+                    StaticVariables.Uitschrijvingen = ReadCSVFiles.ReadCSVmoodleInschrijvingen(file);
+
+                    foreach (var opdracht in StaticVariables.Uitschrijvingen)
+                    {
+                        RestServicesMoodle.UnEnrollUserInMoodle("3", opdracht.Username, opdracht.CourseShortName);
+                    }
+                }
+            }
+        }
+
+        }
 }

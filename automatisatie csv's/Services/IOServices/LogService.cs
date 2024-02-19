@@ -8,8 +8,8 @@ namespace automatisatie_csv_s.Services.IOServices
 {
     public class LogService
     {
-        public static bool LogToFile = true;
-        public static bool LogOutputToConsole = false;
+        public static bool LogToFile = false;
+        public static bool LogOutputToConsole = true;
         public static bool LogErrorsToConsole = true;
 
         public static void LogEvent(string logEvent, string TypeEvent)
@@ -61,18 +61,18 @@ namespace automatisatie_csv_s.Services.IOServices
 
         private static void LogErrorToCSV(string error)
         {
-            // Path to the CSV file
-            string csvFilePath = "errors.csv";
+            //// Path to the CSV file
+            //string csvFilePath = "errors.csv";
 
 
-            // Check if the CSV file exists, create it if not
-            if (!File.Exists(csvFilePath))
-            {
+            //// Check if the CSV file exists, create it if not
+            //if (!File.Exists(csvFilePath))
+            //{
 
-                File.WriteAllText(csvFilePath, "Errors\n");
-            }
+            //    File.WriteAllText(csvFilePath, "Errors\n");
+            //}
 
-            File.AppendAllText(csvFilePath, error + "\n");
+            //File.AppendAllText(csvFilePath, error + "\n");
         }
     }
 

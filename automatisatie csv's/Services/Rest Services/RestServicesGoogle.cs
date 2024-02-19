@@ -62,7 +62,7 @@ namespace automatisatie_csv_s.Services.IOServices
             string filePath = Path.Combine(desktopPath, "user_data.csv");
 
             // Create and write to the CSV file
-            using (StreamWriter writer = new(filePath, true)) // Pass true to append to existing file
+            using (StreamWriter writer = new (filePath, true)) // Pass true to append to existing file
             {
                 // If the file is empty, write the header row
                 if (writer.BaseStream.Length == 0)

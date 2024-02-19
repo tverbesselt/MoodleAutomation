@@ -12,26 +12,44 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        LogService.LogEvent("Application started at " + DateTime.Now.ToShortTimeString + " on " + DateTime.Now.ToShortDateString(), "Application");
+        bool DoUnenRollments = false;
+        bool DoEnrollments = true;
+        bool Loopcontinously = false;
+        int timeoutBetweenLoopsInMinutes = 60;
+
+        StartProgramFlow(DoUnenRollments, DoEnrollments, timeoutBetweenLoopsInMinutes, Loopcontinously);
+    }
+
+    private static void StartProgramFlow(bool doUnenRollments, bool doEnrollments, int timeoutBetweenLoopsInMinutes, bool loopcontinously)
+    {
+        LogService.LogEvent("Application started at " + DateTime.Now.ToShortTimeString() + " on " + DateTime.Now.ToShortDateString(), "Application");
+
+        RestServicesMoodle.LoadCourses();
 
 
         RestServicesMoodle.LoadCategoriesFromMoodle();
-        
+
         string zipfile = Zipservices.SearchForZipFilesOnDesktop();
-        
+
         string[] files = Zipservices.ExtractZipToTemp(zipfile);
 
-        Zipservices.AddNewUsersAndCoursesToMoodle(files);
+        if (doEnrollments)
+        {
+            Zipservices.AddNewUsersAndCoursesToMoodle(files);
+        }
+        
 
         RestServicesMoodle.LoadUsersAndCourses();
-            
+
+
         Zipservices.AddEnrollmentsAndAssignmentsToMoodle(files);
 
         RestServicesGoogle.CreateGoogleImportList();
 
-        
-        LogService.LogEvent("Application finished at " + DateTime.Now.ToShortTimeString + " on " + DateTime.Now.ToShortDateString(), "Application");
+        //Zipservices.UnEnrollusers(files);
 
+        LogService.LogEvent("Application finished at " + DateTime.Now.ToShortTimeString() + " on " + DateTime.Now.ToShortDateString(), "Application");
+        Console.WriteLine("tis weer allemaal gelukt. Goe bezig Chris!");
     }
 }
 

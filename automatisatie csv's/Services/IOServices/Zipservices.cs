@@ -32,25 +32,27 @@ namespace automatisatie_csv_s.Services.IOServices
         }
         private static void CleanUpTempDir(string zipFilePath)
         {
+            string tempDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(zipFilePath));
+
+            if (!Directory.Exists(tempDir))
+            {
+                return; // Nothing to clean up
+            }
+
             try
             {
-                string tempDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(zipFilePath));
-
-                // Get all files in the directory
                 string[] files = Directory.GetFiles(tempDir);
 
-                // Delete each file
                 foreach (string file in files)
                 {
                     File.Delete(file);
-                
                 }
 
                 Console.WriteLine("All files deleted successfully!");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"No files to delete");
+                Console.WriteLine("No files to delete");
             }
         }
         public static string SearchForZipFilesOnDesktop()
@@ -177,5 +179,5 @@ namespace automatisatie_csv_s.Services.IOServices
             }
         }
 
-        }
+    }
 }
